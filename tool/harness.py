@@ -48,6 +48,7 @@ from synthetic_data import get_shared_image_classification_tensors
 from utils import aggregate_run1_maps, print_as_table, print_header
 import multiprocessing
 import json
+import warnings
 
 def parse_args():
     """
@@ -286,19 +287,29 @@ def run_mem_test(cmd):
 def get_dataset_stats(dir_path):
    train_path = dir_path + "/train/"
    cmd = "du -sh " + train_path
-   process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+   process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
    (output,err)=process.communicate()
    exit_code = process.wait()
-   size = output.decode('utf-8').split()[0][:-1]
-   metric = output.decode('utf-8').split()[0][-1]
-   if str(metric) == "T":
-       size = int(float(size)*1024)
+   if exit_code == 0:
+        size = output.decode('utf-8').split()[0][:-1]
+        metric = output.decode('utf-8').split()[0][-1]
+        if str(metric) == "T":
+            size = int(float(size)*1024)
+   else:
+        warnings.WarningMessage('Could not get dataset size... Maybe the dataset has not an ImageNet-style layout?')
+        size = None
+       
  
    cmd = "find " + train_path + " -type f | wc -l"
-   process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+   process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
    (output,err)=process.communicate()
    exit_code = process.wait()
-   samples = output.decode('utf-8').split()[0]
+
+   if exit_code == 0:
+       samples = output.decode('utf-8').split()[0]
+   else:
+       warnings.WarningMessage('Could not get dataset samples count... Maybe the dataset has not an ImageNet-style layout?')
+       samples = None
 
    return size, samples
 
@@ -442,8 +453,12 @@ def main():
         print("Datasets statistics already collected. Continuing to step 6\n")
     else:
         size, total_samples =  get_dataset_stats(args.training_script_args[-1])
-        args.stats["AVG_SAMPLE_SIZE"] = int(size)
-        args.stats["TOTAL_SAMPLES"] = int(total_samples)
+        args.stats["AVG_SAMPLE_SIZE"] = int(size) if size is not None else 'UNDETERMINED'
+        args.stats["TOTAL_SAMPLES"] = int(total_samples) if total_samples is not None else 'UNDETERMINED'
+
+        if (args.stats["TOTAL_SAMPLES"] is None) | (args.stats["AVG_SAMPLE_SIZE"] is None):
+            warnings.WarningMessage('Some issues encountered in determining dataset stats, ' \
+            'remember to manually modify the JSON if you want to use the what_if_tool')
         
 
     # Finally dump all stats to a json which can be querried later
