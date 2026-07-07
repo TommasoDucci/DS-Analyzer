@@ -190,7 +190,7 @@ def stop_resource_profiling():
 def clear_cache():
     ret = os.system("echo 3 > /proc/sys/vm/drop_caches")
     if ret != 0:
-        print("WARNING: couldn't drop page cache")
+        print("WARNING: couldn't drop page cache, might effect cold vs hot run comparisons")
     else:
         print("Cleared Page Cache...")
 
