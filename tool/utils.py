@@ -188,5 +188,9 @@ def stop_resource_profiling():
     return res, res_free
 
 def clear_cache():
-    os.system("echo 3 > /proc/sys/vm/drop_caches")
-    print("Cleared Page Cache...")
+    ret = os.system("echo 3 > /proc/sys/vm/drop_caches")
+    if ret != 0:
+        print("WARNING: couldn't drop page cache")
+    else:
+        print("Cleared Page Cache...")
+
