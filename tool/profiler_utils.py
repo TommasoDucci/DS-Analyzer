@@ -1,9 +1,11 @@
 import os
 import sys
 import time
+import subprocess
 from tqdm import tqdm
 import json
 import logging
+import warnings
 #from instant import inline
 from colorama import Fore
 
@@ -46,6 +48,10 @@ class DataStallProfiler():
             self.time_logger.write("Iter, Memcpy Time,  Data time, Compute time \n")
         else:
             self.time_logger.write("Iter, Data time, Compute time \n")
+
+        gpu_outfile = 'profile-' + self.args.suffix + '_gpu.csv'
+        self.gpu_logger = open(gpu_outfile, 'w')
+        self.gpu_logger.write("Iter, GPU Util (%), Mem Used (MiB)\n")
         self.data_time = 0
         self.memcpy_time = 0
         self.compute_time = 0
@@ -81,6 +87,7 @@ class DataStallProfiler():
         self.stream.close()
         self.stream_err.close()
         self.time_logger.close()
+        self.gpu_logger.close()
         #sys.stdout.close()
         #sys.stdout = sys.__stdout__
         self.running_time = time.time() - self.running_time
@@ -177,4 +184,15 @@ class DataStallProfiler():
         else:
             print("ERR in iter {} COMP".format(self.iter))
             raise Exception("Timer stopeed without starting")
+
+    def sample_gpu(self):
+        try:
+            out = subprocess.check_output(
+                ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used",
+                 "--format=csv,noheader,nounits", "-i", str(self.id)]
+            ).decode().strip()
+            util, mem = out.split(", ")
+            self.gpu_logger.write(f"{self.iter},{util},{mem}\n")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            warnings.warn("Could not read GPU utilization")
 
