@@ -44,7 +44,7 @@ import subprocess
 import os
 import utils
 from argparse import ArgumentParser, REMAINDER
-from synthetic_data import get_shared_image_classification_tensors
+from synthetic_data import get_shared_image_classification_tensors, get_shared_sequence_classification_tensors
 from utils import aggregate_run1_maps, print_as_table, print_header
 import multiprocessing
 import json
@@ -107,6 +107,7 @@ def parse_args():
     parser.add_argument('--precreate', action='store_true')
     parser.add_argument('--use_precreate', action='store_true')
     parser.add_argument("--classes", default=1000, type=int)
+    parser.add_argument("--tensor_type", default='img', type=str)
     parser.add_argument("--tensor_path", default="./train", type=str)
     parser.add_argument("--num_minibatches", default=50, type=int)
     parser.add_argument("--full_epoch", default=False, action='store_true')
@@ -135,9 +136,13 @@ def run_synthetic():
         print("Precreating tensors in {}".format(args.tensor_path))
         if not os.path.exists(args.tensor_path):
             os.makedirs(args.tensor_path)
+        if args.tensor_type == 'seq':
+            precreate_fn = get_shared_sequence_classification_tensors
+        else:
+            precreate_fn = get_shared_image_classification_tensors
         procs = []
         for i in range(5):
-            procs.append(multiprocessing.Process(target=get_shared_image_classification_tensors, args=(args.batch_size, int(args.num_minibatches/5),  i*int(args.num_minibatches/5), args.classes, args.tensor_path)))
+            procs.append(multiprocessing.Process(target=precreate_fn, args=(args.batch_size, int(args.num_minibatches/5),  i*int(args.num_minibatches/5), args.classes, args.tensor_path)))
             procs[i].start()
 
         for i in range(5):
