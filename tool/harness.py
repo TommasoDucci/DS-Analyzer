@@ -301,7 +301,7 @@ def get_dataset_stats(dir_path):
         if str(metric) == "T":
             size = int(float(size)*1024)
    else:
-        warnings.WarningMessage('Could not get dataset size... Maybe the dataset has not an ImageNet-style layout?')
+        warnings.warn('Could not get dataset size... Maybe the dataset has not an ImageNet-style layout?')
         size = None
        
  
@@ -313,7 +313,7 @@ def get_dataset_stats(dir_path):
    if exit_code == 0:
        samples = output.decode('utf-8').split()[0]
    else:
-       warnings.WarningMessage('Could not get dataset samples count... Maybe the dataset has not an ImageNet-style layout?')
+       warnings.warn('Could not get dataset samples count... Maybe the dataset has not an ImageNet-style layout?')
        samples = None
 
    return size, samples
