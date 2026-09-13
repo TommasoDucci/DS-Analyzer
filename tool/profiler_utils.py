@@ -129,7 +129,7 @@ class DataStallProfiler():
     def stop_memcpy_tick(self):
         if self.iter < self.warmup:
             return
-        if self.active:
+        if self.active_sub:
             self.memcpy_time = time.time() - self.memcpy_time
             self.total_memcpy_time += self.memcpy_time
             self.active_sub = False
