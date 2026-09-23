@@ -203,7 +203,7 @@ def run_synthetic():
         if process.returncode != 0:
             raise subprocess.CalledProcessError(returncode=process.returncode,
                                                 cmd=process.args)
-    log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) +  "/run1-synthetic/"
+    log_path = args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) +  "/run1-synthetic/"
 
     
     utils.move_logs(log_path)
@@ -214,9 +214,9 @@ def run_synthetic():
 def run_with_data(cached=False):
     dist_world_size = args.nproc_per_node * args.nnodes
     if not cached: 
-        log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(dist_world_size) +  "/cpus-" + str(args.workers) + "/run2-fetch-preprocess/"
+        log_path = args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(dist_world_size) +  "/cpus-" + str(args.workers) + "/run2-fetch-preprocess/"
     else:
-        log_path = os.getcwd() + "/" +  args.prefix + "/" + args.arch + "/jobs-1"+ "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/run3-preprocess/"
+        log_path = args.prefix + "/" + args.arch + "/jobs-1"+ "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/run3-preprocess/"
       
     # set PyTorch distributed related environmental variables
     current_env = os.environ.copy()
@@ -333,7 +333,7 @@ def main():
         with open(args.resume_json, 'r') as jf:
             args.stats = json.load(jf)
 
-    final_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
+    final_log_path = args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
 
     # Stage 1 : Run with synthetic dataset
     if resume and 'RUN1' in args.stats:
@@ -456,15 +456,15 @@ def main():
 
     if resume and 'AVG_SAMPLE_SIZE' in args.stats:
         print("Datasets statistics already collected. Continuing to step 6\n")
-    else:
-        size, total_samples =  get_dataset_stats(args.training_script_args[-1])
-        args.stats["AVG_SAMPLE_SIZE"] = int(size) if size is not None else 'UNDETERMINED'
-        args.stats["TOTAL_SAMPLES"] = int(total_samples) if total_samples is not None else 'UNDETERMINED'
-
-        if (args.stats["TOTAL_SAMPLES"] is None) | (args.stats["AVG_SAMPLE_SIZE"] is None):
-            warnings.WarningMessage('Some issues encountered in determining dataset stats, ' \
-            'remember to manually modify the JSON if you want to use the what_if_tool')
-        
+    #else:
+    #    size, total_samples =  get_dataset_stats(args.training_script_args[-1])
+    #    args.stats["AVG_SAMPLE_SIZE"] = int(size) if size is not None else 'UNDETERMINED'
+    #    args.stats["TOTAL_SAMPLES"] = int(total_samples) if total_samples is not None else 'UNDETERMINED'
+#breaks because path calculated dumbly
+    #    if (args.stats["TOTAL_SAMPLES"] is None) | (args.stats["AVG_SAMPLE_SIZE"] is None):
+    #        warnings.WarningMessage('Some issues encountered in determining dataset stats, ' \
+    #        'remember to manually modify the JSON if you want to use the what_if_tool')
+    #    
 
     # Finally dump all stats to a json which can be querried later
     json_outfile = final_log_path + 'MODEL.json'
