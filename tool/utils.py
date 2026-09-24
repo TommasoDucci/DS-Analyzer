@@ -2,6 +2,7 @@ import os
 import sys
 import statistics
 import csv
+import time
 
 def str2bool(v):    
     if isinstance(v, bool):
@@ -120,7 +121,7 @@ def parseDstat(fname):
     write_list = []
     recv_list = []
     send_list = []
-    for i in range(6):
+    for i in range(5):
         next(csvfile)
     reader = csv.DictReader(csvfile)
     header = reader.fieldnames
@@ -180,11 +181,12 @@ def start_resource_profiling():
     os.system("./free.sh &")
 
 def stop_resource_profiling():
-    # SIGTERM kills dstat's Python process outright, losing its buffered (never-flushed)
-    # CSV writes; SIGINT raises KeyboardInterrupt instead, letting it unwind and close the
-    # file cleanly.
-    os.system("pkill -INT -f dstat")
+    # dstat's CSV writes are now flushed per-line (see the dstat fork), so the signal used
+    # to stop it no longer matters for data loss. Plain SIGTERM: SIGINT is silently ignored
+    # here since dstat runs as a backgrounded (os.system "&") job with no controlling tty.
+    os.system("pkill -f dstat")
     os.system("pkill -f free")
+    time.sleep(1)  # pkill returns as soon as the signal is sent, not once the target has died
     os.system("./parseFree.sh free.out")
     res = parseDstat('all-utils.csv')
     res_free = parseFree('free.csv')
