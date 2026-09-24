@@ -180,7 +180,10 @@ def start_resource_profiling():
     os.system("./free.sh &")
 
 def stop_resource_profiling():
-    os.system("pkill -f dstat")
+    # SIGTERM kills dstat's Python process outright, losing its buffered (never-flushed)
+    # CSV writes; SIGINT raises KeyboardInterrupt instead, letting it unwind and close the
+    # file cleanly.
+    os.system("pkill -INT -f dstat")
     os.system("pkill -f free")
     os.system("./parseFree.sh free.out")
     res = parseDstat('all-utils.csv')
