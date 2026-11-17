@@ -120,9 +120,13 @@ def parseDstat(fname):
     write_list = []
     recv_list = []
     send_list = []
-    for i in range(6):
-        next(csvfile)
-    reader = csv.DictReader(csvfile)
+    # Il numero di righe di preambolo varia tra versioni di dstat (con/senza riga vuota dopo
+    # "Cmdline:"), e se il file esisteva già dstat ci appende un nuovo blocco: si prende
+    # quindi l'ultima riga di header (quella che inizia con "usr") e si parsano le righe dopo.
+    lines = csvfile.read().splitlines()
+    csvfile.close()
+    header_idx = max(i for i, l in enumerate(lines) if l.startswith('"usr"'))
+    reader = csv.DictReader([l for l in lines[header_idx:] if l.strip()])
     header = reader.fieldnames
     for row in reader:
         idle_list.append(float(row["idl"]))
@@ -176,6 +180,10 @@ def parseFree(fname):
 
 
 def start_resource_profiling():
+    # dstat e free.sh appendono: rimuovi i residui di un run precedente andato in crash
+    for f in ("all-utils.csv", "free.out", "free.csv"):
+        if os.path.exists(f):
+            os.remove(f)
     os.system("dstat -cdnm --output all-utils.csv 2>&1 >> redirect-dstat.log &")
     os.system("./free.sh &")
 
